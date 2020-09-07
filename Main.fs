@@ -32,7 +32,8 @@ module Main =
                 {state with grid = Grid.update msg state.grid},Cmd.none
             | Grid.ImportProcedure (path) ->
                 {state with grid = Grid.update msg state.grid},Cmd.none
-
+            | Grid.RemoveChem (dest,chem) ->
+                {state with grid = Grid.update msg state.grid},Cmd.none
     let view (state: State) (dispatch: Msg -> unit) =
         DockPanel.create [
             DockPanel.children [
