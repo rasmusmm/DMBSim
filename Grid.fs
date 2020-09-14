@@ -7,12 +7,14 @@ module Grid =
     open Avalonia.FuncUI.Types
     open Avalonia.Controls
     open Avalonia.Controls.Primitives
+    open Avalonia.Controls.Shapes
     open System
     open System.IO
     let baseDirectory = __SOURCE_DIRECTORY__
     let baseDirectory' = Directory.GetParent(baseDirectory)
     let filePath = "DMBSim\commands.txt"
     let fullPath = Path.Combine(baseDirectory'.FullName, filePath)
+    
     type Msg =
         | MoveChem of GridPosition * GridPosition * Chemical
         | AddChem of  GridPosition * Chemical
@@ -28,6 +30,21 @@ module Grid =
     let view (grid: GridModel) (dispatch: Msg -> unit) : IView =
         DockPanel.create[
             DockPanel.children[
+            (*
+                    List.map (GridModel.DropletValues >> (fun (chems,x,y,r) -> 
+                    Canvas.create [
+                    Canvas.background "#2c3e50"
+                    Canvas.children[
+                        Ellipse.create[
+                                Ellipse.top 10.0
+                                Ellipse.left 10.0
+                                Ellipse.width r
+                                Ellipse.height r
+                                Ellipse.fill "#ecf0f1"
+                        ] |> generalize
+                    ]
+                    ])) grid.Droplets
+                    *)
                 Button.create [
                             Button.dock Dock.Bottom
                             Button.background "#d35400"
@@ -55,6 +72,20 @@ module Grid =
                             ] |> generalize                     
                         )
                         |> Array.toList
+                        |> List.append (List.map (GridModel.DropletValues >> (fun (chems,x,y,r) -> 
+                        
+                        Canvas.create [
+                        Canvas.background "#2c3e50"
+                        Canvas.children[
+                            Ellipse.create[
+                                Ellipse.top (float x)
+                                Ellipse.left (float y)
+                                Ellipse.width r
+                                Ellipse.height r
+                                Ellipse.fill "#ecf0f1"
+                            ] 
+                        ] 
+                        ] |> generalize)) grid.Droplets)
                     )        
         ]
         ]]

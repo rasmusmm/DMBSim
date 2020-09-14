@@ -8,11 +8,16 @@ type Electrode = {
     ChemList : Chemical list
     Activation : bool
 }
-
+type Droplet ={
+    ChemList : Chemical list
+    Radius : float
+    Pos : GridPosition
+}
 type GridModel = { 
     Width : int
     Height : int
     Electrodes : Electrode[,]
+    Droplets : Droplet list
 }
 
 module GridModel =
@@ -34,7 +39,14 @@ module GridModel =
     let constructBlank (width: int, height: int) : GridModel =
         { Width = width
           Height = height
-          Electrodes = Array2D.create width height { ChemList = [] ; Activation = false}  } 
+          Electrodes = Array2D.create width height { ChemList = [] ; Activation = false}
+          Droplets = [
+                    {ChemList = [("test",1.1)];
+                    Radius = 1000.1;
+                    Pos = {x=10;y=10}}]  } 
+
+    let DropletValues (droplet : Droplet) =
+        (droplet.ChemList,droplet.Pos.x, droplet.Pos.y, droplet.Radius)
     
     let RemoveEmptyChem (chemList : Chemical list) : Chemical list =
         List.filter (fun (s,v) ->  v > 0.0 ) chemList
