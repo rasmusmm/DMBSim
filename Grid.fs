@@ -20,74 +20,88 @@ module Grid =
         | AddChem of  GridPosition * Chemical
         | RemoveChem of GridPosition * Chemical
         | ImportProcedure of string
+        // | PrintDroplets
 
     let update (msg:Msg) (grid:GridModel):GridModel =
         match msg with
         | MoveChem (pos,dest,chem) -> GridModel.moveChem (pos,dest,chem) (grid)
-        | AddChem (dest,chem) -> GridModel.setElectrode (dest,GridModel.addChem(GridModel.getElectrode dest grid,chem)) (grid)
-        | RemoveChem (dest,chem) -> GridModel.setElectrode (dest,GridModel.removeChem(GridModel.getElectrode dest grid,chem)) (grid)
+        | AddChem (dest,chem) -> GridModel.setDroplet (dest,GridModel.addChem(GridModel.getDroplet dest grid,chem)) (grid)
+        | RemoveChem (dest,chem) -> GridModel.setDroplet (dest,GridModel.removeChem(GridModel.getDroplet dest grid,chem)) (grid)
         | ImportProcedure (path) -> GridModel.ImportProcedure (path) (grid)
+        // | PrintDroplets -> printfn "%A" grid.Droplets
+        //                    grid
     let view (grid: GridModel) (dispatch: Msg -> unit) : IView =
-        DockPanel.create[
-            DockPanel.children[
-            (*
-                    List.map (GridModel.DropletValues >> (fun (chems,x,y,r) -> 
-                    Canvas.create [
-                    Canvas.background "#2c3e50"
-                    Canvas.children[
-                        Ellipse.create[
-                                Ellipse.top 10.0
-                                Ellipse.left 10.0
-                                Ellipse.width r
-                                Ellipse.height r
-                                Ellipse.fill "#ecf0f1"
-                        ] |> generalize
+         DockPanel.create[
+                DockPanel.zIndex 0
+                DockPanel.children[
+                    Canvas.create[
+                        Canvas.zIndex 1
+                        Canvas.children[
+                            let dropletlist = List.map (GridModel.DropletValues) grid.Droplets
+                            for (chemlist,x,y) in dropletlist do
+                                let r = List.fold (fun acc (s,v)-> acc + v) 0.0 chemlist
+                                Ellipse.create[
+                                    Ellipse.top (float x)
+                                    Ellipse.left (float y)
+                                    Ellipse.width r
+                                    Ellipse.height r
+                                    Ellipse.fill "#ecf0f1"
+                                ]
+                        ]
                     ]
-                    ])) grid.Droplets
-                    *)
-                Button.create [
-                            Button.dock Dock.Bottom
-                            Button.background "#d35400"
-                            Button.onClick ((fun _ -> ImportProcedure (fullPath)  |> dispatch), SubPatchOptions.Always)
-                            Button.content "Import Procedure"
-                ]|> generalize
-                UniformGrid.create [
+                    Button.create [
+                        Button.dock Dock.Bottom
+                        Button.background "#d35400"
+                        Button.onClick ((fun _ -> ImportProcedure (fullPath)  |> dispatch), SubPatchOptions.OnChangeOf grid.Droplets)
+                        Button.content "Import Procedure"
+                    ]
+                    // Button.create [
+                    //     Button.dock Dock.Bottom
+                    //     Button.background "#d35400"
+                    //     Button.onClick ((fun _ ->  PrintDroplets |> dispatch), SubPatchOptions.OnChangeOf grid.Droplets)
+                    //     Button.content "show droplet"
+                    // ]
+                    UniformGrid.create [
+                    UniformGrid.zIndex 0
                     UniformGrid.columns grid.Width
                     UniformGrid.rows grid.Height
-                    UniformGrid.children (
+                    UniformGrid.children(
                         grid.Electrodes
                         |> Array2D.flati
                         |> Array.map (fun (x, y, electrode) ->
                             let electrodePosition = { x = x; y = y }
                             
                             Button.create [
-                                match electrode.ChemList with
-                                | [] ->
-                                    yield Button.onClick ((fun _ -> AddChem (electrodePosition,("test",1.1)) |> dispatch), SubPatchOptions.OnChangeOf electrodePosition)
+                                match electrode.Activation with
+                                | false ->
+                                    (*
+                                    yield Button.onClick ((fun _ -> AddChem (electrodePosition,("test",10.1)) |> dispatch), SubPatchOptions.OnChangeOf electrodePosition)
+                                    *)
                                     yield Button.background "gray"
-                                | _ ->
-                                    yield Button.onClick ((fun _ -> RemoveChem (electrodePosition,("test",1.1))  |> dispatch), SubPatchOptions.OnChangeOf electrodePosition)
+                                | true ->
+                                    (*
+                                    yield Button.onClick ((fun _ -> RemoveChem (electrodePosition,("test",10.1))  |> dispatch), SubPatchOptions.OnChangeOf electrodePosition)
+                                    *)
                                     yield Button.background "green"
                                 
                             ] |> generalize                     
                         )
                         |> Array.toList
-                        |> List.append (List.map (GridModel.DropletValues >> (fun (chems,x,y,r) -> 
-                        
-                        Canvas.create [
-                        Canvas.background "#2c3e50"
-                        Canvas.children[
-                            Ellipse.create[
-                                Ellipse.top (float x)
-                                Ellipse.left (float y)
-                                Ellipse.width r
-                                Ellipse.height r
-                                Ellipse.fill "#ecf0f1"
-                            ] 
-                        ] 
-                        ] |> generalize)) grid.Droplets)
-                    )        
-        ]
-        ]]
-        |> generalize
+                    )
+                    ]
+                ]
+            ] |> generalize
         
+
+(*
+
+        Canvas.create [
+            Canvas.children[
+
+
+
+              
+                
+                
+
+*)
