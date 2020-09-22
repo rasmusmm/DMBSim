@@ -9,7 +9,7 @@
       "DMBSim/1.0.0": {
         "dependencies": {
           "Avalonia.Desktop": "0.9.7",
-          "FSharp.Core": "4.7.2",
+          "FSharp.Core": "4.7.0",
           "JaggerJo.Avalonia.FuncUI": "0.4.0",
           "JaggerJo.Avalonia.FuncUI.DSL": "0.4.0",
           "JaggerJo.Avalonia.FuncUI.Elmish": "0.4.0"
@@ -238,7 +238,7 @@
       },
       "Elmish/3.0.6": {
         "dependencies": {
-          "FSharp.Core": "4.7.2"
+          "FSharp.Core": "4.7.0"
         },
         "runtime": {
           "lib/netstandard2.0/Elmish.dll": {
@@ -247,11 +247,11 @@
           }
         }
       },
-      "FSharp.Core/4.7.2": {
+      "FSharp.Core/4.7.0": {
         "runtime": {
           "lib/netstandard2.0/FSharp.Core.dll": {
             "assemblyVersion": "4.7.0.0",
-            "fileVersion": "4.700.20.27008"
+            "fileVersion": "4.700.19.40208"
           }
         },
         "resources": {
@@ -299,7 +299,7 @@
       "JaggerJo.Avalonia.FuncUI/0.4.0": {
         "dependencies": {
           "Avalonia.Desktop": "0.9.7",
-          "FSharp.Core": "4.7.2"
+          "FSharp.Core": "4.7.0"
         },
         "runtime": {
           "lib/netstandard2.0/Avalonia.FuncUI.dll": {
@@ -311,7 +311,7 @@
       "JaggerJo.Avalonia.FuncUI.DSL/0.4.0": {
         "dependencies": {
           "Avalonia.Desktop": "0.9.7",
-          "FSharp.Core": "4.7.2",
+          "FSharp.Core": "4.7.0",
           "JaggerJo.Avalonia.FuncUI": "0.4.0"
         },
         "runtime": {
@@ -325,7 +325,7 @@
         "dependencies": {
           "Avalonia.Desktop": "0.9.7",
           "Elmish": "3.0.6",
-          "FSharp.Core": "4.7.2",
+          "FSharp.Core": "4.7.0",
           "JaggerJo.Avalonia.FuncUI": "0.4.0"
         },
         "runtime": {
@@ -2016,12 +2016,12 @@
       "path": "elmish/3.0.6",
       "hashPath": "elmish.3.0.6.nupkg.sha512"
     },
-    "FSharp.Core/4.7.2": {
+    "FSharp.Core/4.7.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-w3XFVTnyZUbC8e2QT6a85ern6y7eQPPk+MYemz1FP0iBfgZcembL+wmo5cIZ1kxB8jfoXC8Q9KVkOMsGpkBKbA==",
-      "path": "fsharp.core/4.7.2",
-      "hashPath": "fsharp.core.4.7.2.nupkg.sha512"
+      "sha512": "sha512-6Bf2qzSCaJoP6tTfO+a5muUS7QbyJANqSut73zQvwQ9It5P0ITz9VKseeia2ofco30c55EQ0jA2wf2+A2gpGnw==",
+      "path": "fsharp.core/4.7.0",
+      "hashPath": "fsharp.core.4.7.0.nupkg.sha512"
     },
     "JaggerJo.Avalonia.FuncUI/0.4.0": {
       "type": "package",

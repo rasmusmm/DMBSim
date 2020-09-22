@@ -1,11 +1,10 @@
 namespace DMBSim
 
 open System.IO
-
+open System
 type Chemical = (string * float)
 
 type Electrode = {
-    ChemList : Chemical list
     Activation : bool
 }
 type Droplet ={
@@ -17,6 +16,7 @@ type GridModel = {
     Height : int
     Electrodes : Electrode[,]
     Droplets : Droplet list
+    Procedure : string list list
 }
 
 module GridModel =
@@ -29,6 +29,7 @@ module GridModel =
         else
             printfn "droplet with pos doesnt exist, creating one"
             { grid with Droplets = grid.Droplets @ [droplet]}
+
     let getDroplet (pos: GridPosition) (grid: GridModel)  : Droplet =
         if List.exists (fun d -> d.Pos = pos) grid.Droplets then
             List.find (fun droplet -> droplet.Pos = pos) grid.Droplets
@@ -53,8 +54,9 @@ module GridModel =
     let constructBlank (width: int, height: int) : GridModel =
         { Width = width
           Height = height
-          Electrodes = Array2D.create width height { ChemList = [] ; Activation = false}
-          Droplets = []  
+          Electrodes = Array2D.create width height { Activation = false}
+          Droplets = []
+          Procedure = []  
         } 
 
     let DropletValues (droplet : Droplet) =
@@ -90,36 +92,51 @@ module GridModel =
 
     let checkIfNeighbour (pos: GridPosition, dest: GridPosition):bool =
         ((pos.x = dest.x+1 || pos.x = dest.x-1 || pos.x = dest.x) && (pos.y = dest.y+1 || pos.y = dest.y-1 || pos.y=dest.y))
-         
-     
 
-    let rec moveChem (pos : GridPosition, dest : GridPosition, chemical : Chemical) (grid : GridModel) : GridModel =
-        match pos,dest with
-        | pos,dest when pos.x>dest.x -> moveChem ({pos with x = pos.x-1},dest,chemical) (grid)
-        | pos,dest when pos.x<dest.x -> moveChem ({pos with x = pos.x+1},dest,chemical) (grid)
-        | pos,dest when pos.y>dest.y -> moveChem ({pos with y = pos.y-1},dest,chemical) (grid)
-        | pos,dest when pos.y>dest.y -> moveChem ({pos with y = pos.y+1},dest,chemical) (grid)
-        | pos,dest when checkIfNeighbour (pos,dest) -> let posdroplet = removeChem ((getDroplet (dest) (grid)),chemical)
-                                                       let destdroplet = addChem ((getDroplet (dest) (grid)),chemical)
-                                                       setDroplet (dest,posdroplet) (grid)
-                                                       |> setDroplet (dest,destdroplet)
-        | _ -> failwith "error moving chemical."
-    
-    
+    //jesus christ
+    let moveStep (pos : GridPosition, dest : GridPosition) : GridPosition list =
+        let xStepsNeeded = abs (dest.x - pos.x)
+        let yStepsNeeded = abs (dest.y-pos.y)
+        
+        let xSteps = [for i in pos.x .. dest.x -> {x = i;y = pos.y}]
+        let lastX = xSteps.Tail.[0]
+        let ySteps = [for i in pos.y .. dest.y -> {lastX with y = i}]
+        printfn "%A" (xSteps@ySteps)
+        xSteps@ySteps
 
-    let rec handleProcedure (input:string list list) (grid:GridModel) : GridModel =
-        printfn "Handling Procedure"
+    let oneMove (pos : GridPosition, dest : GridPosition) (grid : GridModel) : GridModel =
+        {grid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
+
+    let moveChem (pos : GridPosition, dest : GridPosition, chemical : Chemical) (grid : GridModel) : GridModel =
+        if checkIfNeighbour (pos,dest) then
+            {grid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
+        else
+            {grid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
+        
+
+    let splitDroplet (pos: GridPosition, dest: GridPosition, percentage : float) (grid : GridModel) : GridModel =
+        let newDroplet = List.find (fun droplet -> droplet.Pos = pos) grid.Droplets
+        let newDroplet1 = {newDroplet with ChemList = List.map (fun (s,v)->(s,v*(1.0-percentage))) newDroplet.ChemList ;Pos = dest} 
+        let newDroplets = List.map (fun d -> if d.Pos = pos then {d with ChemList = List.map (fun (s,v)->(s,v*percentage)) d.ChemList} else d) grid.Droplets
+        {grid with Droplets = newDroplets @ [newDroplet1]}
+
+    let removeProcStep (grid:GridModel) : GridModel =
+        {grid with Procedure = List.tail grid.Procedure}
+
+    let handleProcedure (grid:GridModel) : GridModel =
+        printfn "Handling Procedure step"
         printfn "%A" grid.Droplets
-        match input with
-        | [cmd;pos;dest;chem]::sl when cmd = "MV" -> moveChem (stringToGP pos , stringToGP dest, stringToChemical chem) (grid) |> handleProcedure (sl)
+        match grid.Procedure with
+        | [cmd;pos;dest;chem]::sl when cmd = "MV" -> moveChem (stringToGP pos , stringToGP dest,stringToChemical chem) (grid) |> removeProcStep
         | [cmd;dest;chem]::sl when cmd = "AD" -> let droplet = addChem ((getDroplet (stringToGP dest) (grid)),stringToChemical chem)
-                                                 setDroplet ((stringToGP dest),droplet) (grid) |> handleProcedure (sl)
+                                                 setDroplet ((stringToGP dest),droplet) (grid) |> removeProcStep
         | [cmd;dest;chem]::sl when cmd = "RM" -> let droplet = removeChem ((getDroplet ((stringToGP dest)) (grid)),stringToChemical chem)
-                                                 setDroplet ((stringToGP dest,droplet)) (grid) |> handleProcedure (sl)
+                                                 setDroplet ((stringToGP dest,droplet)) (grid) |> removeProcStep
+        | [cmd;pos;dest;perc]::sl when cmd = "SP" -> splitDroplet (stringToGP pos,stringToGP dest,perc |> float) (grid)  |> removeProcStep
         | _ -> grid
         
-        
+    
     let ImportProcedure (path:string) (grid:GridModel) : GridModel =
         printfn "Import Initiated"
         let lines = File.ReadAllLines(path) |> Seq.toList |> List.map (fun x -> Array.toList (x.Split [|' '|]) ) 
-        handleProcedure lines grid
+        {grid with Procedure = lines}

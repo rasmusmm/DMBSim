@@ -4,7 +4,7 @@ module Main =
     open Avalonia.Controls
     open Avalonia.FuncUI.DSL
     open Elmish
-    
+   
     type State =
         { grid : GridModel
           chem : Chemical
@@ -16,24 +16,15 @@ module Main =
           running = false }, Cmd.none
 
     type Msg =
-    | GridMsg of Grid.Msg
-    | Start
-    | Stop
+        | GridMsg of Grid.Msg
+        | Start
+        | Stop
 
     let update (msg: Msg) (state: State) : State * Cmd<_>=
         match msg with
         | Start -> { state with running = true }, Cmd.none
         | Stop -> { state with running = false }, Cmd.none
-        | GridMsg msg ->
-            match msg with
-            | Grid.MoveChem ( pos,dest,chem) ->
-                {state with grid = Grid.update msg state.grid},Cmd.none
-            | Grid.AddChem ( dest,chem) ->
-                {state with grid = Grid.update msg state.grid},Cmd.none
-            | Grid.ImportProcedure (path) ->
-                {state with grid = Grid.update msg state.grid},Cmd.none
-            | Grid.RemoveChem (dest,chem) ->
-                {state with grid = Grid.update msg state.grid},Cmd.none
+        | GridMsg msg -> if state.running then {state with grid = Grid.update msg state.grid},Cmd.none else state,Cmd.none
     let view (state: State) (dispatch: Msg -> unit) =
         DockPanel.create [
             DockPanel.children [
@@ -50,6 +41,16 @@ module Main =
                     Button.background "#d35400"
                     Button.onClick (fun _ -> Stop |> dispatch)
                     Button.content "stop"
+                ]
+                DockPanel.create [
+                    DockPanel.dock Dock.Right
+                    DockPanel.children[
+                        AccessText.create[
+                            
+                            
+                        ]
+                        
+                    ]
                 ]
                 
                 Grid.view state.grid (GridMsg >> dispatch ) 

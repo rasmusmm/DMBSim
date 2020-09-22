@@ -218,7 +218,7 @@
           "lib/netstandard2.0/Elmish.dll": {}
         }
       },
-      "FSharp.Core/4.7.2": {
+      "FSharp.Core/4.7.0": {
         "type": "package",
         "compile": {
           "lib/netstandard2.0/FSharp.Core.dll": {}
@@ -3190,15 +3190,14 @@
         "lib/netstandard2.0/Elmish.xml"
       ]
     },
-    "FSharp.Core/4.7.2": {
-      "sha512": "w3XFVTnyZUbC8e2QT6a85ern6y7eQPPk+MYemz1FP0iBfgZcembL+wmo5cIZ1kxB8jfoXC8Q9KVkOMsGpkBKbA==",
+    "FSharp.Core/4.7.0": {
+      "sha512": "6Bf2qzSCaJoP6tTfO+a5muUS7QbyJANqSut73zQvwQ9It5P0ITz9VKseeia2ofco30c55EQ0jA2wf2+A2gpGnw==",
       "type": "package",
-      "path": "fsharp.core/4.7.2",
+      "path": "fsharp.core/4.7.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "Icon.png",
-        "fsharp.core.4.7.2.nupkg.sha512",
+        "fsharp.core.4.7.0.nupkg.sha512",
         "fsharp.core.nuspec",
         "lib/net45/FSharp.Core.dll",
         "lib/net45/FSharp.Core.optdata",
@@ -3233,7 +3232,8 @@
         "lib/netstandard2.0/ru/FSharp.Core.resources.dll",
         "lib/netstandard2.0/tr/FSharp.Core.resources.dll",
         "lib/netstandard2.0/zh-Hans/FSharp.Core.resources.dll",
-        "lib/netstandard2.0/zh-Hant/FSharp.Core.resources.dll"
+        "lib/netstandard2.0/zh-Hant/FSharp.Core.resources.dll",
+        "paket-installmodel.cache"
       ]
     },
     "JaggerJo.Avalonia.FuncUI/0.4.0": {
@@ -8940,7 +8940,7 @@
   "projectFileDependencyGroups": {
     ".NETCoreApp,Version=v3.0": [
       "Avalonia.Desktop >= 0.9.7",
-      "FSharp.Core >= 4.7.2",
+      "FSharp.Core >= 4.7.0",
       "JaggerJo.Avalonia.FuncUI >= 0.4.0",
       "JaggerJo.Avalonia.FuncUI.DSL >= 0.4.0",
       "JaggerJo.Avalonia.FuncUI.Elmish >= 0.4.0"
@@ -8952,11 +8952,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\projects\\DMBSim\\DMBSim.fsproj",
+      "projectUniqueName": "E:\\programming\\bachelorDMB\\DMBSim\\DMBSim.fsproj",
       "projectName": "DMBSim",
-      "projectPath": "C:\\projects\\DMBSim\\DMBSim.fsproj",
+      "projectPath": "E:\\programming\\bachelorDMB\\DMBSim\\DMBSim.fsproj",
       "packagesPath": "C:\\Users\\Rasmus\\.nuget\\packages\\",
-      "outputPath": "C:\\projects\\DMBSim\\obj\\",
+      "outputPath": "E:\\programming\\bachelorDMB\\DMBSim\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Rasmus\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -8978,28 +8978,23 @@
         "dependencies": {
           "Avalonia.Desktop": {
             "target": "Package",
-            "version": "[0.9.7, )",
-            "generatePathProperty": true
+            "version": "[0.9.7, )"
           },
           "FSharp.Core": {
             "target": "Package",
-            "version": "[4.7.2, )",
-            "generatePathProperty": true
+            "version": "[4.7.0, )"
           },
           "JaggerJo.Avalonia.FuncUI": {
             "target": "Package",
-            "version": "[0.4.0, )",
-            "generatePathProperty": true
+            "version": "[0.4.0, )"
           },
           "JaggerJo.Avalonia.FuncUI.DSL": {
             "target": "Package",
-            "version": "[0.4.0, )",
-            "generatePathProperty": true
+            "version": "[0.4.0, )"
           },
           "JaggerJo.Avalonia.FuncUI.Elmish": {
             "target": "Package",
-            "version": "[0.4.0, )",
-            "generatePathProperty": true
+            "version": "[0.4.0, )"
           }
         },
         "imports": [
@@ -9012,12 +9007,30 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[3.0.1, 3.0.1]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Host.win-x64",
+            "version": "[3.0.3, 3.0.3]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[3.0.0, 3.0.0]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Ref",
+            "version": "[3.0.0, 3.0.0]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.402\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.102\\RuntimeIdentifierGraph.json"
       }
     }
   }

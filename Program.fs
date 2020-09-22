@@ -7,7 +7,8 @@ open Avalonia.Input
 open Avalonia.FuncUI
 open Avalonia.FuncUI.Elmish
 open Avalonia.FuncUI.Components.Hosts
-
+open Avalonia.Threading
+open System
 type MainWindow() as this =
     inherit HostWindow()
     do
@@ -17,10 +18,19 @@ type MainWindow() as this =
         
         //this.VisualRoot.VisualRoot.Renderer.DrawFps <- true
         //this.VisualRoot.VisualRoot.Renderer.DrawDirtyRects <- true
-
+        let timer (_state: Main.State) =
+            let sub (dispatch: Main.Msg -> unit) =
+                let invoke() =
+                    Grid.Step |> Main.GridMsg |> dispatch
+                    true
+                    
+                DispatcherTimer.Run(Func<bool>(invoke), TimeSpan.FromMilliseconds 1000.0) |> ignore
+                
+            Cmd.ofSub sub
 
         Elmish.Program.mkProgram Main.initialState Main.update Main.view
         |> Program.withHost this
+        |> Program.withSubscription timer
         |> Program.run
 
         
