@@ -17,6 +17,10 @@ type GridModel = {
     Electrodes : Electrode[,]
     Droplets : Droplet list
     Procedure : string list list
+    PlainProcedure : string
+    SelectedPos : GridPosition
+    SelectedDest : GridPosition
+    Chem : Chemical
 }
 
 module GridModel =
@@ -57,8 +61,11 @@ module GridModel =
           Electrodes = Array2D.create width height { Activation = false}
           Droplets = []
           Procedure = []  
+          PlainProcedure = ""
+          SelectedPos = {x=10;y=10}
+          SelectedDest = {x=100;y=100}
+          Chem = ("T",120.)
         } 
-
     let DropletValues (droplet : Droplet) =
         (droplet.ChemList,droplet.Pos.x, droplet.Pos.y)
     
@@ -66,11 +73,16 @@ module GridModel =
         let poslist = input.Split [|','|] |> Array.toList
         let newGP = {GridPosition.x = poslist.[0] |> int ;GridPosition.y = poslist.[1] |> int}
         newGP
+    let GPToString (input:GridPosition) : string =
+        sprintf "%d,%d" input.x input.y
 
     let stringToChemical (input : string) : Chemical =
         let chemList = input.Split [|','|] |> Array.toList
         let newChem = (chemList.[0],chemList.[1] |> float)
         newChem
+
+    let ChemicalToString (chem : Chemical ) : string =
+        sprintf "%s,%f" (fst chem) (snd chem)
 
     let RemoveEmptyChem (chemList : Chemical list) : Chemical list =
         List.filter (fun (s,v) ->  v > 0.0 ) chemList
@@ -112,7 +124,17 @@ module GridModel =
             {grid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
         else
             {grid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
+
+    let rec plainTextHelper (input : string list, acc : string) : string =
+        match input with
+        | (s::sl) -> plainTextHelper (sl,acc + " " + s)
+        | [] -> acc
         
+    let plainTextProcedure (input : string list list) : string =
+        match input with
+        | [] -> ""
+        | _ ->  List.map (fun s -> plainTextHelper(s,"")) input
+                 |> List.fold (fun acc s -> acc + s + "\n") ""
 
     let splitDroplet (pos: GridPosition, dest: GridPosition, percentage : float) (grid : GridModel) : GridModel =
         let newDroplet = List.find (fun droplet -> droplet.Pos = pos) grid.Droplets
@@ -121,11 +143,13 @@ module GridModel =
         {grid with Droplets = newDroplets @ [newDroplet1]}
 
     let removeProcStep (grid:GridModel) : GridModel =
-        {grid with Procedure = List.tail grid.Procedure}
+        let tempGrid = {grid with Procedure = List.tail grid.Procedure}
+        {tempGrid with PlainProcedure = plainTextProcedure tempGrid.Procedure}
 
     let handleProcedure (grid:GridModel) : GridModel =
         printfn "Handling Procedure step"
         printfn "%A" grid.Droplets
+        printfn "%A" grid.SelectedDest
         match grid.Procedure with
         | [cmd;pos;dest;chem]::sl when cmd = "MV" -> moveChem (stringToGP pos , stringToGP dest,stringToChemical chem) (grid) |> removeProcStep
         | [cmd;dest;chem]::sl when cmd = "AD" -> let droplet = addChem ((getDroplet (stringToGP dest) (grid)),stringToChemical chem)
@@ -134,9 +158,17 @@ module GridModel =
                                                  setDroplet ((stringToGP dest,droplet)) (grid) |> removeProcStep
         | [cmd;pos;dest;perc]::sl when cmd = "SP" -> splitDroplet (stringToGP pos,stringToGP dest,perc |> float) (grid)  |> removeProcStep
         | _ -> grid
-        
+
+    let EditProcedure (cmd: string) (grid:GridModel) : GridModel =
+        match cmd with
+        | "MV" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "MV %s %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["MV";GPToString grid.SelectedPos;GPToString grid.SelectedDest;ChemicalToString grid.Chem]]}
+        | "AD" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "AD %s %s\n" (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["AD";GPToString grid.SelectedDest;ChemicalToString grid.Chem]]}
+        | "RM" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "MV %s %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["MV"];[GPToString grid.SelectedPos]; [GPToString grid.SelectedDest]; [ChemicalToString grid.Chem]]}
+        | "SP" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "MV %s %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["MV"];[GPToString grid.SelectedPos]; [GPToString grid.SelectedDest]; [ChemicalToString grid.Chem]]}
+        | _ -> grid
     
     let ImportProcedure (path:string) (grid:GridModel) : GridModel =
         printfn "Import Initiated"
         let lines = File.ReadAllLines(path) |> Seq.toList |> List.map (fun x -> Array.toList (x.Split [|' '|]) ) 
-        {grid with Procedure = lines}
+        let tempGrid = {grid with Procedure = lines}
+        {tempGrid with PlainProcedure = plainTextProcedure grid.Procedure}

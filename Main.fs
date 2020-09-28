@@ -4,16 +4,30 @@ module Main =
     open Avalonia.Controls
     open Avalonia.FuncUI.DSL
     open Elmish
+    open Avalonia.Layout
    
     type State =
-        { grid : GridModel
-          chem : Chemical
-          running : bool }
+        { 
+          grid : GridModel
+          running : bool
+        }
         
     let initialState() =
         { grid = GridModel.constructBlank(10, 10)
-          chem = ("",0.0)
           running = false }, Cmd.none
+
+    let stringToGP (input : string) : GridPosition =
+        let poslist = input.Split [|','|] |> Array.toList
+        let newGP = {GridPosition.x = poslist.[0] |> int ;GridPosition.y = poslist.[1] |> int}
+        newGP
+
+    let GPToString (input:GridPosition) : string =
+        sprintf "%d,%d" input.x input.y
+
+    let stringToChemical (input : string) : Chemical =
+        let chemList = input.Split [|','|] |> Array.toList
+        let newChem = (chemList.[0],chemList.[1] |> float)
+        newChem
 
     type Msg =
         | GridMsg of Grid.Msg
@@ -24,7 +38,18 @@ module Main =
         match msg with
         | Start -> { state with running = true }, Cmd.none
         | Stop -> { state with running = false }, Cmd.none
-        | GridMsg msg -> if state.running then {state with grid = Grid.update msg state.grid},Cmd.none else state,Cmd.none
+        | GridMsg msg -> if state.running then {state with grid = Grid.update msg state.grid},Cmd.none 
+                         else
+                            match msg with
+                            | Grid.EditProcedure _ -> {state with grid = Grid.update msg state.grid},Cmd.none
+                            | Grid.ImportProcedure _ -> {state with grid = Grid.update msg state.grid},Cmd.none
+                            | Grid.ClearGrid -> {state with grid = Grid.update msg state.grid},Cmd.none
+                            | Grid.EditDest _ -> {state with grid = Grid.update msg state.grid},Cmd.none
+                            | Grid.EditPos _ -> {state with grid = Grid.update msg state.grid},Cmd.none
+                            | Grid.AddChem _ -> {state with grid = Grid.update msg state.grid},Cmd.none
+                            | _ -> state,Cmd.none
+
+
     let view (state: State) (dispatch: Msg -> unit) =
         DockPanel.create [
             DockPanel.children [
@@ -42,17 +67,9 @@ module Main =
                     Button.onClick (fun _ -> Stop |> dispatch)
                     Button.content "stop"
                 ]
-                DockPanel.create [
-                    DockPanel.dock Dock.Right
-                    DockPanel.children[
-                        AccessText.create[
-                            
-                            
-                        ]
-                        
-                    ]
-                ]
+                Grid.view state.grid (GridMsg >> dispatch )
                 
-                Grid.view state.grid (GridMsg >> dispatch ) 
+                
+                
             ]
         ]       

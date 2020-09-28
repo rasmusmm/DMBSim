@@ -13,8 +13,8 @@ type MainWindow() as this =
     inherit HostWindow()
     do
         base.Title <- "DMBSim"
-        base.Width <- 800.0
-        base.Height <- 500.0
+        base.Width <- 1200.0
+        base.Height <- 800.0
         
         //this.VisualRoot.VisualRoot.Renderer.DrawFps <- true
         //this.VisualRoot.VisualRoot.Renderer.DrawDirtyRects <- true
