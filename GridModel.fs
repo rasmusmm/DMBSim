@@ -24,7 +24,7 @@ type GridModel = {
 }
 
 module GridModel =
-
+    
     let setDroplet (pos : GridPosition, droplet:Droplet) (grid:GridModel) : GridModel =
         if List.exists (fun d -> d.Pos = pos) grid.Droplets then
             printfn "droplet does exist, updating"
@@ -136,10 +136,10 @@ module GridModel =
         | _ ->  List.map (fun s -> plainTextHelper(s,"")) input
                  |> List.fold (fun acc s -> acc + s + "\n") ""
 
-    let splitDroplet (pos: GridPosition, dest: GridPosition, percentage : float) (grid : GridModel) : GridModel =
+    let splitDroplet (pos: GridPosition, dest: GridPosition) (grid : GridModel) : GridModel =
         let newDroplet = List.find (fun droplet -> droplet.Pos = pos) grid.Droplets
-        let newDroplet1 = {newDroplet with ChemList = List.map (fun (s,v)->(s,v*(1.0-percentage))) newDroplet.ChemList ;Pos = dest} 
-        let newDroplets = List.map (fun d -> if d.Pos = pos then {d with ChemList = List.map (fun (s,v)->(s,v*percentage)) d.ChemList} else d) grid.Droplets
+        let newDroplet1 = {newDroplet with ChemList = List.map (fun (s,v)->(s,v*0.5)) newDroplet.ChemList ;Pos = dest} 
+        let newDroplets = List.map (fun d -> if d.Pos = pos then {d with ChemList = List.map (fun (s,v)->(s,v*0.5)) d.ChemList} else d) grid.Droplets
         {grid with Droplets = newDroplets @ [newDroplet1]}
 
     let removeProcStep (grid:GridModel) : GridModel =
@@ -156,15 +156,16 @@ module GridModel =
                                                  setDroplet ((stringToGP dest),droplet) (grid) |> removeProcStep
         | [cmd;dest;chem]::sl when cmd = "RM" -> let droplet = removeChem ((getDroplet ((stringToGP dest)) (grid)),stringToChemical chem)
                                                  setDroplet ((stringToGP dest,droplet)) (grid) |> removeProcStep
-        | [cmd;pos;dest;perc]::sl when cmd = "SP" -> splitDroplet (stringToGP pos,stringToGP dest,perc |> float) (grid)  |> removeProcStep
-        | _ -> grid
+        | [cmd;pos;dest]::sl when cmd = "SP" -> splitDroplet (stringToGP pos,stringToGP dest) (grid)  |> removeProcStep
+        | [] -> grid
+        | _ -> failwith "Unknown or invalid procedure step."
 
     let EditProcedure (cmd: string) (grid:GridModel) : GridModel =
         match cmd with
         | "MV" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "MV %s %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["MV";GPToString grid.SelectedPos;GPToString grid.SelectedDest;ChemicalToString grid.Chem]]}
         | "AD" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "AD %s %s\n" (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["AD";GPToString grid.SelectedDest;ChemicalToString grid.Chem]]}
-        | "RM" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "MV %s %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["MV"];[GPToString grid.SelectedPos]; [GPToString grid.SelectedDest]; [ChemicalToString grid.Chem]]}
-        | "SP" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "MV %s %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["MV"];[GPToString grid.SelectedPos]; [GPToString grid.SelectedDest]; [ChemicalToString grid.Chem]]}
+        | "RM" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "RM %s %s\n" (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["MV";GPToString grid.SelectedDest; ChemicalToString grid.Chem]]}
+        | "SP" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "SP %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest);Procedure = grid.Procedure @ [["SP";GPToString grid.SelectedPos; GPToString grid.SelectedDest]]}
         | _ -> grid
     
     let ImportProcedure (path:string) (grid:GridModel) : GridModel =

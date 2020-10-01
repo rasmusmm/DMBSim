@@ -16,7 +16,11 @@ module Grid =
     let baseDirectory' = Directory.GetParent(baseDirectory)
     let filePath = "DMBSim\commands.txt"
     let fullPath = Path.Combine(baseDirectory'.FullName, filePath)
-    
+
+    let dropletString (dl:Droplet list):string =
+        List.fold (fun acc d -> let chemlist = List.fold (fun acc1 (s,v)-> acc1 + sprintf "Name: %s, Volume: %f \n" s v) "" d.ChemList
+                                acc + sprintf "Position: %d,%d Chemicals:\n %s" d.Pos.x d.Pos.y chemlist
+        ) "" dl
     type Msg =
         | Step
         | MoveChem of GridPosition * GridPosition * Chemical
@@ -27,8 +31,9 @@ module Grid =
         | ClearGrid
         | EditDest of string
         | EditPos of string
+        | EditChem of string
         // | PrintDroplets
-
+    //Move,Add,Remove are unused at the moment, perhaps should be removed.
     let update (msg:Msg) (grid:GridModel) : GridModel =
         match msg with
         | Step -> GridModel.handleProcedure (grid) 
@@ -40,6 +45,7 @@ module Grid =
         | ClearGrid -> GridModel.constructBlank(10, 10)
         | EditDest (dest) -> {grid with SelectedDest = GridModel.stringToGP dest}
         | EditPos (pos) -> {grid with SelectedPos = GridModel.stringToGP pos}
+        | EditChem (chemical) -> {grid with Chem = GridModel.stringToChemical chemical}
         // | PrintDroplets -> printfn "%A" grid.Droplets
         //                    grid
 
@@ -57,9 +63,23 @@ module Grid =
                     TextBlock.text (grid.PlainProcedure)
                 ]
                 Button.create [
-                    //Button.onClick ((fun _ -> EditProcedure ("AD")  |> dispatch))
-                    Button.onClick ((fun _ -> AddChem (grid.SelectedDest,grid.Chem)  |> dispatch))
-                    Button.content ""
+                    Button.onClick ((fun _ -> EditProcedure ("AD")  |> dispatch))
+                    Button.content "Add"
+                    
+                ]
+                Button.create [
+                    Button.onClick ((fun _ -> EditProcedure ("RM")  |> dispatch))
+                    Button.content "Remove"
+                    
+                ]
+                Button.create [
+                    Button.onClick ((fun _ -> EditProcedure ("SP")  |> dispatch))
+                    Button.content "Split"
+                    
+                ]
+                Button.create [
+                    Button.onClick ((fun _ -> EditProcedure ("MV")  |> dispatch))
+                    Button.content "Move"
                     
                 ]
                 TextBox.create [
@@ -77,6 +97,15 @@ module Grid =
                     TextBox.watermark "Insert destination position as x,y"
                     TextBox.text (GridModel.GPToString grid.SelectedDest)
                     TextBox.onTextChanged (EditDest >> dispatch)
+                            
+                ]
+                TextBox.create [
+                    TextBox.width 200.
+                    TextBox.height 50.
+                    TextBox.verticalAlignment VerticalAlignment.Bottom
+                    TextBox.watermark "Insert Chemical as name,volume"
+                    TextBox.text (GridModel.ChemicalToString grid.Chem)
+                    TextBox.onTextChanged (EditChem >> dispatch)
                             
                 ]
                 
@@ -168,7 +197,15 @@ module Grid =
                         
                     ]
                 ]
-                rightsideControlsView grid dispatch 
+                rightsideControlsView grid dispatch
+                TextBlock.create [
+                    TextBlock.width 400.
+                    TextBlock.height 100.
+                    TextBlock.margin (horizontal = 3.0,vertical = 10.0)
+                    TextBlock.fontSize 16.0
+                    TextBlock.verticalAlignment VerticalAlignment.Top
+                    TextBlock.text ("Droplets : \n"+dropletString (grid.Droplets))
+                ] 
             ]
         ] |> generalize
          

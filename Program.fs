@@ -16,8 +16,7 @@ type MainWindow() as this =
         base.Width <- 1200.0
         base.Height <- 800.0
         
-        //this.VisualRoot.VisualRoot.Renderer.DrawFps <- true
-        //this.VisualRoot.VisualRoot.Renderer.DrawDirtyRects <- true
+        
         let timer (_state: Main.State) =
             let sub (dispatch: Main.Msg -> unit) =
                 let invoke() =
