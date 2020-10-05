@@ -48,6 +48,7 @@ module Main =
                             | Grid.EditPos _ -> {state with grid = Grid.update msg state.grid},Cmd.none
                             | Grid.EditChem _ -> {state with grid = Grid.update msg state.grid},Cmd.none
                             | Grid.AddChem _ -> {state with grid = Grid.update msg state.grid},Cmd.none
+                            | Grid.RemoveStep -> {state with grid = Grid.update msg state.grid},Cmd.none
                             | _ -> state,Cmd.none
 
 

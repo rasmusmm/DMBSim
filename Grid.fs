@@ -32,11 +32,13 @@ module Grid =
         | EditDest of string
         | EditPos of string
         | EditChem of string
+        | RemoveStep
         // | PrintDroplets
     //Move,Add,Remove are unused at the moment, perhaps should be removed.
     let update (msg:Msg) (grid:GridModel) : GridModel =
         match msg with
-        | Step -> GridModel.handleProcedure (grid) 
+        | Step -> GridModel.handleProcedure (grid)
+        | RemoveStep -> GridModel.removeProcStep (grid)
         | MoveChem (pos,dest,chem) -> GridModel.moveChem (pos,dest,chem) (grid)
         | AddChem (dest,chem) -> GridModel.setDroplet (dest,GridModel.addChem(GridModel.getDroplet dest grid,chem)) (grid)
         | RemoveChem (dest,chem) -> GridModel.setDroplet (dest,GridModel.removeChem(GridModel.getDroplet dest grid,chem)) (grid)
@@ -80,6 +82,11 @@ module Grid =
                 Button.create [
                     Button.onClick ((fun _ -> EditProcedure ("MV")  |> dispatch))
                     Button.content "Move"
+                    
+                ]
+                Button.create [
+                    Button.onClick ((fun _ -> RemoveStep  |> dispatch))
+                    Button.content "Remove step"
                     
                 ]
                 TextBox.create [
