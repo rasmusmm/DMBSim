@@ -23,7 +23,7 @@ module Grid =
         ) "" dl
     type Msg =
         | Step
-        | MoveChem of GridPosition * GridPosition * Chemical
+        | MoveChem of GridPosition * GridPosition
         | AddChem of  GridPosition * Chemical
         | RemoveChem of GridPosition * Chemical
         | ImportProcedure of string
@@ -39,7 +39,7 @@ module Grid =
         match msg with
         | Step -> GridModel.handleProcedure (grid)
         | RemoveStep -> GridModel.removeProcStep (grid)
-        | MoveChem (pos,dest,chem) -> GridModel.moveChem (pos,dest,chem) (grid)
+        | MoveChem (pos,dest) -> GridModel.moveChem (pos,dest) (grid)
         | AddChem (dest,chem) -> GridModel.setDroplet (dest,GridModel.addChem(GridModel.getDroplet dest grid,chem)) (grid)
         | RemoveChem (dest,chem) -> GridModel.setDroplet (dest,GridModel.removeChem(GridModel.getDroplet dest grid,chem)) (grid)
         | ImportProcedure (path) -> GridModel.ImportProcedure (path) (grid)
@@ -170,13 +170,19 @@ module Grid =
                                 electrodeView grid dispatch
                                 let dropletlist = List.map (GridModel.DropletValues) grid.Droplets
                                 for (chemlist,x,y) in dropletlist do
-                                    let r = List.fold (fun acc (s,v)-> acc + (v/2.)) 0.0 chemlist
+                                    //we use the formula for a clynder since the droplet is pressed between two planes
+                                    // V = Pi * r^2 * h
+                                    //We have V and h and use this information to find r
+                                    let V = (List.fold (fun acc (s,v)-> acc + (v/2.)) 0.0 chemlist)
+                                    let r =  Math.Sqrt ((V/(Math.PI * 0.1)))
+                                    let d = r*2.
+                                    let cellMidWidth = (600./(grid.Width |> float))
+                                    let cellMidHeight = (400./(grid.Height |> float))
                                     Ellipse.create[
-                                        
-                                        Ellipse.top (float y)
-                                        Ellipse.left (float x)
-                                        Ellipse.width r
-                                        Ellipse.height r
+                                        Ellipse.top ((((float y)*cellMidHeight))-(0.5*cellMidHeight)-r)
+                                        Ellipse.left ((((float x)*cellMidWidth))-(0.5*cellMidWidth)-r)
+                                        Ellipse.width d
+                                        Ellipse.height d
                                         Ellipse.fill "#ecf0f1"
                                     ]
                                 
@@ -188,7 +194,7 @@ module Grid =
                             Button.height 40.0
                             Button.width 600.0
                             Button.dock Dock.Bottom
-                            Button.background "#d35400"
+                            Button.background "#16a085"
                             Button.onClick ((fun _ -> ImportProcedure (fullPath)  |> dispatch), SubPatchOptions.OnChangeOf grid.Procedure)
                             Button.content "Import Procedure"
                         ]
@@ -197,7 +203,7 @@ module Grid =
                             Button.height 40.0
                             Button.width 600.0
                             Button.dock Dock.Bottom
-                            Button.background "#d35400"
+                            Button.background "#16a085"
                             Button.onClick ((fun _ -> ClearGrid  |> dispatch), SubPatchOptions.OnChangeOf grid.Droplets)
                             Button.content "Clear"
                         ]
@@ -207,7 +213,7 @@ module Grid =
                 rightsideControlsView grid dispatch
                 TextBlock.create [
                     TextBlock.width 400.
-                    TextBlock.height 100.
+                    TextBlock.height 500.
                     TextBlock.margin (horizontal = 3.0,vertical = 10.0)
                     TextBlock.fontSize 16.0
                     TextBlock.verticalAlignment VerticalAlignment.Top
