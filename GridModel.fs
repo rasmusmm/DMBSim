@@ -42,8 +42,9 @@ module GridModel =
             {ChemList = [];Pos = pos;}
 
     let setElectrode (pos : GridPosition, electrode:Electrode) (grid:GridModel) : GridModel =
-        { grid with Electrodes = Array2D.set grid.Electrodes (pos.x-1) (pos.y-1) electrode  }
-
+        { grid with Electrodes = Array2D.set grid.Electrodes (pos.y-1) (pos.x-1) electrode  }
+    
+         
     let getElectrode (pos: GridPosition) (grid: GridModel)  : Electrode =
         Array2D.get grid.Electrodes pos.x pos.y
     
@@ -96,26 +97,24 @@ module GridModel =
             failwith "Failure removing chemical from droplet. Confirm that droplet contains chemical in larger quantity than you are trying to remove."
 
     let checkIfNeighbour (pos: GridPosition, dest: GridPosition):bool =
-        ((pos.x = dest.x+1 || pos.x = dest.x-1 || pos.x = dest.x) && (pos.y = dest.y+1 || pos.y = dest.y-1 || pos.y=dest.y))
+        ((abs(pos.x - dest.x)=1)&&pos.y=dest.y) || ((abs(pos.y - dest.y)=1)&&pos.x=dest.x) 
 
     //jesus christ
-    let moveStep (pos : GridPosition, dest : GridPosition) : GridPosition list =
-        let xStepsNeeded = abs (dest.x - pos.x)
-        let yStepsNeeded = abs (dest.y-pos.y)
-        
-        let xSteps = [for i in pos.x .. dest.x -> {x = i;y = pos.y}]
-        let lastX = xSteps.Tail.[0]
-        let ySteps = [for i in pos.y .. dest.y -> {lastX with y = i}]
-        printfn "%A" (xSteps@ySteps)
-        xSteps@ySteps
-
+    let moveStep (pos : GridPosition, dest : GridPosition) : string list list =
+        let xSteps = [for i in pos.x .. dest.x-1 -> sprintf "MV %i,%i %i,%i" i pos.y (i+1) pos.y ]
+        let ySteps = [for i in pos.y .. dest.y-1 -> sprintf "MV %i,%i %i,%i" dest.x i dest.x (i+1)]
+        let results = xSteps@ySteps |> List.map (fun sl -> Seq.toList (sl.Split ' ') )
+        [["dummystep"]]@results
     let oneMove (pos : GridPosition, dest : GridPosition) (grid : GridModel) : GridModel =
         {grid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
 
     let moveChem (pos : GridPosition, dest : GridPosition) (grid : GridModel) : GridModel =
-        let tempGrid = setElectrode (dest,{Activation = true}) (grid) |> setElectrode (pos,{Activation = false})
-        {tempGrid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
-        
+        if checkIfNeighbour (pos,dest) then
+            let tempGrid = setElectrode (dest,{Activation = true}) (grid) |> setElectrode (pos,{Activation = false})
+            {tempGrid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
+        else
+            let tempProcedure = List.tail grid.Procedure
+            {grid with Procedure = moveStep (pos,dest)@tempProcedure}
 
     let rec plainTextHelper (input : string list, acc : string) : string =
         match input with
@@ -138,7 +137,7 @@ module GridModel =
                         | _ -> {x=0;y=0}
         let newDroplet1 = {newDroplet with ChemList = List.map (fun (s,v)->(s,v*0.5)) newDroplet.ChemList ;Pos = tempPos} 
         let newDroplets = List.map (fun d -> if d.Pos = pos then {d with ChemList = List.map (fun (s,v)->(s,v*0.5)) d.ChemList} else d) grid.Droplets
-        let tempGrid = {grid with Droplets = newDroplets @ [newDroplet1]}
+        let tempGrid = {grid with Droplets = newDroplets @ [newDroplet1]} |> setElectrode (tempPos,{Activation = true})
         //let tempGrid1 = setElectrode (dest,{Activation = true}) (tempGrid)
         //{tempGrid1 with Droplets = List.map (fun d -> if d.Pos = tempPos then {d with Pos = dest} else d) tempGrid1.Droplets}
         moveChem (tempPos,dest) tempGrid
@@ -168,7 +167,7 @@ module GridModel =
         match cmd with
         | "MV" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "MV %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest);Procedure = grid.Procedure @ [["MV";GPToString grid.SelectedPos;GPToString grid.SelectedDest]]}
         | "AD" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "AD %s %s\n" (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["AD";GPToString grid.SelectedDest;ChemicalToString grid.Chem]]}
-        | "RM" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "RM %s %s\n" (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["MV";GPToString grid.SelectedDest;ChemicalToString grid.Chem]]}
+        | "RM" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "RM %s %s\n" (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["RM";GPToString grid.SelectedDest;ChemicalToString grid.Chem]]}
         | "SP" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "SP %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest);Procedure = grid.Procedure @ [["SP";GPToString grid.SelectedPos;GPToString grid.SelectedDest]]}
         | _ -> grid
     
