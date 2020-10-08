@@ -86,7 +86,6 @@ module GridModel =
             let newChemList = List.map (fun (s,v) -> if s = fst chemical then (s,v + (snd chemical)) else (s,v)) droplet.ChemList
             {droplet with ChemList = newChemList}
         else
-            printfn "#2"
             {droplet with ChemList = droplet.ChemList @ [chemical]}
     
     let removeChem (droplet : Droplet, chemical : Chemical) : Droplet =
@@ -99,19 +98,33 @@ module GridModel =
     let checkIfNeighbour (pos: GridPosition, dest: GridPosition):bool =
         ((abs(pos.x - dest.x)=1)&&pos.y=dest.y) || ((abs(pos.y - dest.y)=1)&&pos.x=dest.x) 
 
-    //jesus christ
     let moveStep (pos : GridPosition, dest : GridPosition) : string list list =
         let xSteps = [for i in pos.x .. dest.x-1 -> sprintf "MV %i,%i %i,%i" i pos.y (i+1) pos.y ]
         let ySteps = [for i in pos.y .. dest.y-1 -> sprintf "MV %i,%i %i,%i" dest.x i dest.x (i+1)]
         let results = xSteps@ySteps |> List.map (fun sl -> Seq.toList (sl.Split ' ') )
         [["dummystep"]]@results
-    let oneMove (pos : GridPosition, dest : GridPosition) (grid : GridModel) : GridModel =
-        {grid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
+
+    let rec consolidateHelper (d : Droplet,chemList : Chemical list) : Droplet =
+        match chemList with
+        | [] -> d
+        | c::cl ->  let newdrop = addChem(d,c)
+                    consolidateHelper(newdrop,cl)
+        
+    let consolidateDroplets (pos : GridPosition) (grid : GridModel) : GridModel =
+        let newDropletList = List.filter (fun d -> d.Pos = pos ) grid.Droplets
+        if newDropletList.Length > 1 then
+            let tempDrop = newDropletList.[0]
+            let newDrop = consolidateHelper (tempDrop,newDropletList.[1].ChemList)
+            let restList = List.filter (fun d -> d.Pos <> pos ) grid.Droplets
+            {grid with Droplets = restList@[newDrop]}
+        else
+            grid
 
     let moveChem (pos : GridPosition, dest : GridPosition) (grid : GridModel) : GridModel =
         if checkIfNeighbour (pos,dest) then
             let tempGrid = setElectrode (dest,{Activation = true}) (grid) |> setElectrode (pos,{Activation = false})
-            {tempGrid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
+            let tempGrid2 = {tempGrid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
+            consolidateDroplets (dest) (tempGrid2)
         else
             let tempProcedure = List.tail grid.Procedure
             {grid with Procedure = moveStep (pos,dest)@tempProcedure}
@@ -138,8 +151,6 @@ module GridModel =
         let newDroplet1 = {newDroplet with ChemList = List.map (fun (s,v)->(s,v*0.5)) newDroplet.ChemList ;Pos = tempPos} 
         let newDroplets = List.map (fun d -> if d.Pos = pos then {d with ChemList = List.map (fun (s,v)->(s,v*0.5)) d.ChemList} else d) grid.Droplets
         let tempGrid = {grid with Droplets = newDroplets @ [newDroplet1]} |> setElectrode (tempPos,{Activation = true})
-        //let tempGrid1 = setElectrode (dest,{Activation = true}) (tempGrid)
-        //{tempGrid1 with Droplets = List.map (fun d -> if d.Pos = tempPos then {d with Pos = dest} else d) tempGrid1.Droplets}
         moveChem (tempPos,dest) tempGrid
 
 
@@ -165,10 +176,14 @@ module GridModel =
 
     let EditProcedure (cmd: string) (grid:GridModel) : GridModel =
         match cmd with
-        | "MV" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "MV %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest);Procedure = grid.Procedure @ [["MV";GPToString grid.SelectedPos;GPToString grid.SelectedDest]]}
-        | "AD" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "AD %s %s\n" (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["AD";GPToString grid.SelectedDest;ChemicalToString grid.Chem]]}
-        | "RM" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "RM %s %s\n" (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);Procedure = grid.Procedure @ [["RM";GPToString grid.SelectedDest;ChemicalToString grid.Chem]]}
-        | "SP" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "SP %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest);Procedure = grid.Procedure @ [["SP";GPToString grid.SelectedPos;GPToString grid.SelectedDest]]}
+        | "MV" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "MV %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest);
+                             Procedure = grid.Procedure @ [["MV";GPToString grid.SelectedPos;GPToString grid.SelectedDest]]}
+        | "AD" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "AD %s %s\n" (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);
+                             Procedure = grid.Procedure @ [["AD";GPToString grid.SelectedDest;ChemicalToString grid.Chem]]}
+        | "RM" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "RM %s %s\n" (GPToString grid.SelectedDest) (ChemicalToString grid.Chem);
+                             Procedure = grid.Procedure @ [["RM";GPToString grid.SelectedDest;ChemicalToString grid.Chem]]}
+        | "SP" -> {grid with PlainProcedure = grid.PlainProcedure + sprintf "SP %s %s\n" (GPToString grid.SelectedPos) (GPToString grid.SelectedDest);
+                             Procedure = grid.Procedure @ [["SP";GPToString grid.SelectedPos;GPToString grid.SelectedDest]]}
         | _ -> grid
     
     let ImportProcedure (path:string) (grid:GridModel) : GridModel =

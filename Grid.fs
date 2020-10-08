@@ -23,9 +23,6 @@ module Grid =
         ) "" dl
     type Msg =
         | Step
-        | MoveChem of GridPosition * GridPosition
-        | AddChem of  GridPosition * Chemical
-        | RemoveChem of GridPosition * Chemical
         | ImportProcedure of string
         | EditProcedure of string
         | ClearGrid
@@ -39,9 +36,6 @@ module Grid =
         match msg with
         | Step -> GridModel.handleProcedure (grid)
         | RemoveStep -> GridModel.removeProcStep (grid)
-        | MoveChem (pos,dest) -> GridModel.moveChem (pos,dest) (grid)
-        | AddChem (dest,chem) -> GridModel.setDroplet (dest,GridModel.addChem(GridModel.getDroplet dest grid,chem)) (grid)
-        | RemoveChem (dest,chem) -> GridModel.setDroplet (dest,GridModel.removeChem(GridModel.getDroplet dest grid,chem)) (grid)
         | ImportProcedure (path) -> GridModel.ImportProcedure (path) (grid)
         | EditProcedure (input) -> GridModel.EditProcedure (input) (grid)
         | ClearGrid -> GridModel.constructBlank(10, 10)
