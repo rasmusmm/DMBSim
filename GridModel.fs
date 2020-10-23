@@ -98,11 +98,7 @@ module GridModel =
     let checkIfNeighbour (pos: GridPosition, dest: GridPosition):bool =
         ((abs(pos.x - dest.x)=1)&&pos.y=dest.y) || ((abs(pos.y - dest.y)=1)&&pos.x=dest.x) 
 
-    let moveStep (pos : GridPosition, dest : GridPosition) : string list list =
-        let xSteps = [for i in pos.x .. dest.x-1 -> sprintf "MV %i,%i %i,%i" i pos.y (i+1) pos.y ]
-        let ySteps = [for i in pos.y .. dest.y-1 -> sprintf "MV %i,%i %i,%i" dest.x i dest.x (i+1)]
-        let results = xSteps@ySteps |> List.map (fun sl -> Seq.toList (sl.Split ' ') )
-        [["dummystep"]]@results
+    
 
     let rec consolidateHelper (d : Droplet,chemList : Chemical list) : Droplet =
         match chemList with
@@ -119,12 +115,17 @@ module GridModel =
             {grid with Droplets = restList@[newDrop]}
         else
             grid
+    let moveStep (pos : GridPosition, dest : GridPosition) : string list list =
+        let xSteps = [for i in pos.x .. dest.x-1 -> sprintf "MV %i,%i %i,%i" i pos.y (i+1) pos.y ]
+        let ySteps = [for i in pos.y .. dest.y-1 -> sprintf "MV %i,%i %i,%i" dest.x i dest.x (i+1)]
+        let results = xSteps@ySteps |> List.map (fun sl -> Seq.toList (sl.Split ' ') )
+        [["dummystep"]]@results//dummystep will be removed when handleProcedure calls removeProcStep.
 
     let moveChem (pos : GridPosition, dest : GridPosition) (grid : GridModel) : GridModel =
         if checkIfNeighbour (pos,dest) then
             let tempGrid = setElectrode (dest,{Activation = true}) (grid) |> setElectrode (pos,{Activation = false})
-            let tempGrid2 = {tempGrid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets}
-            consolidateDroplets (dest) (tempGrid2)
+            {tempGrid with Droplets = List.map (fun d -> if d.Pos = pos then {d with Pos = dest} else d) grid.Droplets} |>
+            consolidateDroplets (dest)
         else
             let tempProcedure = List.tail grid.Procedure
             {grid with Procedure = moveStep (pos,dest)@tempProcedure}
@@ -159,9 +160,6 @@ module GridModel =
         {tempGrid with PlainProcedure = plainTextProcedure tempGrid.Procedure}
 
     let handleProcedure (grid:GridModel) : GridModel =
-        printfn "Handling Procedure step"
-        printfn "%A" grid.Droplets
-        printfn "%A" grid.Procedure
         match grid.Procedure with
         | [cmd;pos;dest]::sl when cmd = "MV" -> moveChem (stringToGP pos , stringToGP dest) (grid) |> removeProcStep
         | [cmd;dest;chem]::sl when cmd = "AD" -> let droplet = addChem ((getDroplet (stringToGP dest) (grid)),stringToChemical chem)

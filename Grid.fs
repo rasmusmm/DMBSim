@@ -30,8 +30,7 @@ module Grid =
         | EditPos of string
         | EditChem of string
         | RemoveStep
-        // | PrintDroplets
-    //Move,Add,Remove are unused at the moment, perhaps should be removed.
+
     let update (msg:Msg) (grid:GridModel) : GridModel =
         match msg with
         | Step -> GridModel.handleProcedure (grid)
@@ -42,8 +41,6 @@ module Grid =
         | EditDest (dest) -> {grid with SelectedDest = GridModel.stringToGP dest}
         | EditPos (pos) -> {grid with SelectedPos = GridModel.stringToGP pos}
         | EditChem (chemical) -> {grid with Chem = GridModel.stringToChemical chemical}
-        // | PrintDroplets -> printfn "%A" grid.Droplets
-        //                    grid
 
     let private rightsideControlsView (grid: GridModel) (dispatch : Msg -> unit) :IView =
         StackPanel.create [
@@ -164,7 +161,7 @@ module Grid =
                                 electrodeView grid dispatch
                                 let dropletlist = List.map (GridModel.DropletValues) grid.Droplets
                                 for (chemlist,x,y) in dropletlist do
-                                    //we use the formula for a clynder since the droplet is pressed between two planes
+                                    //we use the formula for a cylinder since the droplet is pressed between two planes
                                     // V = Pi * r^2 * h
                                     //We have V and h and use this information to find r
                                     let V = (List.fold (fun acc (s,v)-> acc + (v/2.)) 0.0 chemlist)
