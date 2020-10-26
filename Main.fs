@@ -68,7 +68,9 @@ module Main =
                     Button.onClick (fun _ -> Stop |> dispatch)
                     Button.content "stop"
                 ]
-                Grid.view state.grid (GridMsg >> dispatch )
+                
+                Grid.view state.grid (GridMsg >> dispatch)
+                
                 
                 
                 

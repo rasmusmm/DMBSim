@@ -109,6 +109,7 @@ module Grid =
                 
                 
                 
+                
             ]
         ] |> generalize
 
@@ -118,6 +119,7 @@ module Grid =
             UniformGrid.width 600.0
             UniformGrid.height 400.0
             UniformGrid.dock Dock.Top
+            UniformGrid.dock Dock.Left
             UniformGrid.columns grid.Width
             UniformGrid.rows grid.Height
             UniformGrid.children(
@@ -139,16 +141,24 @@ module Grid =
     let view (grid: GridModel) (dispatch: Msg -> unit) : IView =
         StackPanel.create [
             StackPanel.zIndex 0
-            StackPanel.width 800.
+            StackPanel.width 1200.
             StackPanel.height 400.
             StackPanel.orientation Orientation.Horizontal
-            StackPanel.dock Dock.Top
-            StackPanel.dock Dock.Right
             
             StackPanel.children[
+                TextBlock.create [
+                            TextBlock.dock Dock.Left
+                            TextBlock.width 200.
+                            TextBlock.height 400.
+                            TextBlock.margin (horizontal = 3.0,vertical = 10.0)
+                            TextBlock.fontSize 16.0
+                            TextBlock.verticalAlignment VerticalAlignment.Top
+                            TextBlock.text ("Droplets : \n"+dropletString (grid.Droplets))
+                ]
+                
                 StackPanel.create[
                     StackPanel.width 800.
-                    StackPanel.height 500.
+                    StackPanel.height 400.
                     StackPanel.children[
                         
                         Canvas.create[
@@ -198,18 +208,15 @@ module Grid =
                             Button.onClick ((fun _ -> ClearGrid  |> dispatch), SubPatchOptions.OnChangeOf grid.Droplets)
                             Button.content "Clear"
                         ]
+                        TextBlock.create [
+                            TextBlock.width 600.
+                            TextBlock.text (grid.ErrorMessage)
+                        ]
                         
                     ]
                 ]
                 rightsideControlsView grid dispatch
-                TextBlock.create [
-                    TextBlock.width 400.
-                    TextBlock.height 500.
-                    TextBlock.margin (horizontal = 3.0,vertical = 10.0)
-                    TextBlock.fontSize 16.0
-                    TextBlock.verticalAlignment VerticalAlignment.Top
-                    TextBlock.text ("Droplets : \n"+dropletString (grid.Droplets))
-                ] 
+                
             ]
         ] |> generalize
          

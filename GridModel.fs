@@ -21,6 +21,7 @@ type GridModel = {
     SelectedPos : GridPosition
     SelectedDest : GridPosition
     Chem : Chemical
+    ErrorMessage : string
 }
 
 module GridModel =
@@ -59,6 +60,7 @@ module GridModel =
           SelectedPos = {x=1;y=1}
           SelectedDest = {x=5;y=5}
           Chem = ("TestChem1",1.2)
+          ErrorMessage = ""
         } 
     let DropletValues (droplet : Droplet) =
         (droplet.ChemList,droplet.Pos.x, droplet.Pos.y)
@@ -89,11 +91,9 @@ module GridModel =
             {droplet with ChemList = droplet.ChemList @ [chemical]}
     
     let removeChem (droplet : Droplet, chemical : Chemical) : Droplet =
-        if (List.exists (fun (s,v) -> s = fst chemical) droplet.ChemList && List.exists (fun (s,v) -> v >= snd chemical) droplet.ChemList)  then
-            let newChemList = List.map (fun (s,v) -> if s = fst chemical then (s,(v - (snd chemical))) else (s,v)) droplet.ChemList |>  RemoveEmptyChem
-            {droplet with ChemList = newChemList}
-        else
-            failwith "Failure removing chemical from droplet. Confirm that droplet contains chemical in larger quantity than you are trying to remove."
+        let newChemList = List.map (fun (s,v) -> if s = fst chemical then (s,(v - (snd chemical))) else (s,v)) droplet.ChemList |>  RemoveEmptyChem
+        {droplet with ChemList = newChemList}
+        
 
     let checkIfNeighbour (pos: GridPosition, dest: GridPosition):bool =
         ((abs(pos.x - dest.x)=1)&&pos.y=dest.y) || ((abs(pos.y - dest.y)=1)&&pos.x=dest.x) 
@@ -157,18 +157,27 @@ module GridModel =
 
     let removeProcStep (grid:GridModel) : GridModel =
         let tempGrid = {grid with Procedure = List.tail grid.Procedure}
-        {tempGrid with PlainProcedure = plainTextProcedure tempGrid.Procedure}
-
+        {tempGrid with PlainProcedure = plainTextProcedure tempGrid.Procedure;ErrorMessage = ""}
+ (*let droplet = removeChem ((getDroplet ((stringToGP dest)) (grid)),stringToChemical chem)
+                                                 let tempGrid = setElectrode ((stringToGP dest),{Activation = false}) (grid)
+                                                 setDroplet ((stringToGP dest,droplet)) (tempGrid) |> removeProcStep*)
     let handleProcedure (grid:GridModel) : GridModel =
         match grid.Procedure with
-        | [cmd;pos;dest]::sl when cmd = "MV" -> moveChem (stringToGP pos , stringToGP dest) (grid) |> removeProcStep
+        | [cmd;pos;dest]::sl when cmd = "MV" -> match List.tryFind (fun d -> d.Pos = stringToGP pos) grid.Droplets with 
+                                                | Some _ -> moveChem (stringToGP pos , stringToGP dest) (grid) |> removeProcStep 
+                                                | None -> {grid with ErrorMessage = "Error executing move function, control that droplet exists" }
         | [cmd;dest;chem]::sl when cmd = "AD" -> let droplet = addChem ((getDroplet (stringToGP dest) (grid)),stringToChemical chem)
                                                  let tempGrid = setElectrode ((stringToGP dest),{Activation = true}) (grid)
                                                  setDroplet ((stringToGP dest),droplet) (tempGrid) |> removeProcStep
-        | [cmd;dest;chem]::sl when cmd = "RM" -> let droplet = removeChem ((getDroplet ((stringToGP dest)) (grid)),stringToChemical chem)
-                                                 let tempGrid = setElectrode ((stringToGP dest),{Activation = false}) (grid)
-                                                 setDroplet ((stringToGP dest,droplet)) (tempGrid) |> removeProcStep
-        | [cmd;pos;dest]::sl when cmd = "SP" -> splitDroplet (stringToGP pos,stringToGP dest) (grid)  |> removeProcStep
+        | [cmd;dest;chem]::sl when cmd = "RM" ->  match List.tryFind (fun d -> d.Pos = stringToGP dest && (List.exists (fun (s,v) -> s = fst (stringToChemical chem)) d.ChemList && List.exists (fun (s,v) -> v >= snd (stringToChemical chem)) d.ChemList)) grid.Droplets with
+                                                  | Some _ -> let droplet = removeChem ((getDroplet ((stringToGP dest)) (grid)),stringToChemical chem)
+                                                              let tempGrid = setElectrode ((stringToGP dest),{Activation = false}) (grid)
+                                                              setDroplet ((stringToGP dest,droplet)) (tempGrid) |> removeProcStep
+                                                  | None -> {grid with ErrorMessage = "Error executing remove function, control that droplet exists and contains correct chemical/chemical volume" }
+                                                    
+        | [cmd;pos;dest]::sl when cmd = "SP" -> match List.tryFind (fun d -> d.Pos = stringToGP pos) grid.Droplets with 
+                                                | Some _ -> splitDroplet (stringToGP pos,stringToGP dest) (grid)  |> removeProcStep
+                                                | None -> {grid with ErrorMessage = "Error executing split function, control that droplet exists" }
         | [] -> grid
         | _ -> failwith "Unknown or invalid procedure step."
 
