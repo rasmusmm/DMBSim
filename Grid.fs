@@ -174,8 +174,8 @@ module Grid =
                                     //we use the formula for a cylinder since the droplet is pressed between two planes
                                     // V = Pi * r^2 * h
                                     //We have V and h and use this information to find r
-                                    let V = (List.fold (fun acc (s,v)-> acc + (v/2.)) 0.0 chemlist)
-                                    let r =  Math.Sqrt ((V/(Math.PI * 0.1)))
+                                    let V = (List.fold (fun acc (s,v)-> acc + (v)) 0.0 chemlist)
+                                    let r =  Math.Sqrt ((V/(Math.PI * 0.3)))
                                     let d = r*2.
                                     let cellMidWidth = (600./(grid.Width |> float))
                                     let cellMidHeight = (400./(grid.Height |> float))

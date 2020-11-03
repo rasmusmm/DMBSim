@@ -144,10 +144,10 @@ module GridModel =
     let splitDroplet (pos: GridPosition, dest: GridPosition) (grid : GridModel) : GridModel =
         let newDroplet = List.find (fun droplet -> droplet.Pos = pos) grid.Droplets
         let tempPos = match pos,dest with
-                        | pos,dest when pos.x>dest.y || pos.y>dest.y -> {pos with x=pos.x-1;y=pos.y-1}
-                        | pos,dest when pos.x>dest.y || pos.y<dest.y -> {pos with x=pos.x-1;y=pos.y+1}
-                        | pos,dest when pos.x<dest.y || pos.y>dest.y -> {pos with x=pos.x+1;y=pos.y-1}
-                        | pos,dest when pos.x<dest.y || pos.y<dest.y -> {pos with x=pos.x+1;y=pos.y+1}
+                        | pos,dest when pos.x>dest.x -> {pos with x=pos.x-1}
+                        | pos,dest when pos.x<dest.x -> {pos with x=pos.x+1}
+                        | pos,dest when pos.y<dest.y -> {pos with y=pos.y+1}
+                        | pos,dest when pos.y>dest.y -> {pos with y=pos.y-1}
                         | _ -> {x=0;y=0}
         let newDroplet1 = {newDroplet with ChemList = List.map (fun (s,v)->(s,v*0.5)) newDroplet.ChemList ;Pos = tempPos} 
         let newDroplets = List.map (fun d -> if d.Pos = pos then {d with ChemList = List.map (fun (s,v)->(s,v*0.5)) d.ChemList} else d) grid.Droplets
@@ -158,9 +158,7 @@ module GridModel =
     let removeProcStep (grid:GridModel) : GridModel =
         let tempGrid = {grid with Procedure = List.tail grid.Procedure}
         {tempGrid with PlainProcedure = plainTextProcedure tempGrid.Procedure;ErrorMessage = ""}
- (*let droplet = removeChem ((getDroplet ((stringToGP dest)) (grid)),stringToChemical chem)
-                                                 let tempGrid = setElectrode ((stringToGP dest),{Activation = false}) (grid)
-                                                 setDroplet ((stringToGP dest,droplet)) (tempGrid) |> removeProcStep*)
+        
     let handleProcedure (grid:GridModel) : GridModel =
         match grid.Procedure with
         | [cmd;pos;dest]::sl when cmd = "MV" -> match List.tryFind (fun d -> d.Pos = stringToGP pos) grid.Droplets with 
